@@ -10,14 +10,14 @@ export const createContext = async (opts: FetchCreateContextFnOptions) => {
   const token = authHeader?.replace('Bearer ', '');
   
   let user = null;
-  if (token) {
+  if (token && token !== 'undefined' && token !== 'null') {
     try {
       const { data: { user: authUser }, error } = await supabase.auth.getUser(token);
       if (!error && authUser) {
         user = authUser;
       }
     } catch (error) {
-      console.error('Auth error:', error);
+      console.error('Auth error in tRPC context:', error);
     }
   }
   

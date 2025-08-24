@@ -273,7 +273,7 @@ export default function ScannerScreen() {
         enableTorch={torchOn}
         onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
         barcodeScannerSettings={{
-          barcodeTypes: ["ean13", "ean8", "upc_a", "upc_e", "code128", "code39", "code93", "code128", "itf14", "datamatrix", "pdf417"],
+          barcodeTypes: ["ean13", "ean8", "upc_a", "upc_e", "code128", "code39", "code93", "itf14", "datamatrix", "pdf417"],
         }}
       />
       

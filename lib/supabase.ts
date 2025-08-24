@@ -6,10 +6,10 @@ const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://xgcgrcnznpf
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhnY2dyY256bnBmdnliYXB0bml6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU5MzE4NjUsImV4cCI6MjA3MTUwNzg2NX0.sixa0tci58dkeO20y6kldfzGaYkPYYMghiJpl6ce0Mo';
 
 // Validate URLs
-if (!supabaseUrl || supabaseUrl === 'YOUR_SUPABASE_URL') {
+if (!supabaseUrl || supabaseUrl === 'YOUR_SUPABASE_URL' || supabaseUrl === 'https://your-project-id.supabase.co') {
   throw new Error('Missing or invalid EXPO_PUBLIC_SUPABASE_URL');
 }
-if (!supabaseAnonKey || supabaseAnonKey === 'YOUR_SUPABASE_ANON_KEY') {
+if (!supabaseAnonKey || supabaseAnonKey === 'YOUR_SUPABASE_ANON_KEY' || supabaseAnonKey === 'your-anon-key-here') {
   throw new Error('Missing or invalid EXPO_PUBLIC_SUPABASE_ANON_KEY');
 }
 
