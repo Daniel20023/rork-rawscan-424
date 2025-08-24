@@ -31,9 +31,10 @@ import * as ImagePicker from 'expo-image-picker';
 import { useUserPreferences } from "@/contexts/UserPreferencesContext";
 import { useProductHistory } from "@/contexts/ProductHistoryContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { BackendStatus } from "@/components/BackendStatus";
 
 export default function ProfileScreen() {
-  const { bodyGoals, healthGoals, accomplishmentGoals, name, profilePicture, updateProfilePicture } = useUserPreferences();
+  const { body_goal, health_goals, accomplish_future, name, profilePicture, updateProfilePicture } = useUserPreferences();
   const { history, favorites } = useProductHistory();
   const { signOut, user } = useAuth();
   const [isUploadingImage, setIsUploadingImage] = useState(false);
@@ -41,7 +42,11 @@ export default function ProfileScreen() {
   // Get display name with fallbacks
   const displayName = name || user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split('@')[0] || 'User';
   
-  const allGoals = [...(bodyGoals || []), ...(healthGoals || []), ...(accomplishmentGoals || [])];
+  const allGoals = [
+    ...(body_goal ? [body_goal] : []),
+    ...(health_goals || []),
+    ...(accomplish_future || [])
+  ];
 
   const getAverageScore = () => {
     if (history.length === 0) return 0;
@@ -54,7 +59,7 @@ export default function ProfileScreen() {
       };
       let score = 50;
       
-      if (allGoals.includes("weight_loss")) {
+      if (allGoals.includes("lose_weight")) {
         score -= (nutrition.calories - 200) / 10;
         score -= nutrition.sugar * 2;
       }
@@ -198,7 +203,7 @@ export default function ProfileScreen() {
             {allGoals.slice(0, 3).map((goal, index) => (
               <View key={index} style={styles.goalBadge}>
                 <Text style={styles.goalText}>
-                  {goal.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase())}
+                  {goal.replace(/_/g, " ").replace(/\b\w/g, (l: string) => l.toUpperCase())}
                 </Text>
               </View>
             ))}
@@ -238,6 +243,8 @@ export default function ProfileScreen() {
         ))}
       </View>
 
+      <BackendStatus showDetails={true} />
+      
       <View style={styles.insightCard}>
         <Text style={styles.insightTitle}>Weekly Insight</Text>
         <Text style={styles.insightText}>

@@ -23,6 +23,32 @@ const getBaseUrl = () => {
   return baseUrl;
 };
 
+// Test if backend is accessible
+const testBackendConnection = async (url: string): Promise<boolean> => {
+  try {
+    console.log('Testing backend connection to:', url);
+    const response = await fetch(`${url}/api/`, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+      },
+      // Add timeout
+      signal: AbortSignal.timeout(10000), // 10 second timeout
+    });
+    
+    console.log('Backend test response:', {
+      status: response.status,
+      ok: response.ok,
+      statusText: response.statusText
+    });
+    
+    return response.ok;
+  } catch (error) {
+    console.error('Backend connection test failed:', error);
+    return false;
+  }
+};
+
 
 
 export const createTRPCClient = () => {
@@ -60,12 +86,18 @@ export const createTRPCClient = () => {
           });
           
           try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+            
             const response = await fetch(url, {
               ...options,
+              signal: controller.signal,
               headers: {
                 ...options?.headers,
               },
             });
+            
+            clearTimeout(timeoutId);
             
             console.log('tRPC Response:', {
               status: response.status,
@@ -80,7 +112,16 @@ export const createTRPCClient = () => {
               
               // If we get HTML instead of JSON, it means the backend isn't properly set up
               if (text.includes('<html>') || text.includes('<!DOCTYPE')) {
-                throw new Error(`Backend not properly configured. Got HTML response instead of JSON. Status: ${response.status}. Please ensure the backend is deployed and accessible.`);
+                throw new Error(`Backend not properly configured. Got HTML response instead of JSON. Status: ${response.status}. Please ensure the backend is deployed and accessible at ${getBaseUrl()}`);
+              }
+              
+              // Handle specific HTTP errors
+              if (response.status === 404) {
+                throw new Error(`Backend endpoint not found (404). Check if the backend is deployed correctly at ${getBaseUrl()}/api/trpc`);
+              }
+              
+              if (response.status >= 500) {
+                throw new Error(`Backend server error (${response.status}). The backend may be down or experiencing issues.`);
               }
               
               // Create a new response with the text for tRPC to handle
@@ -95,9 +136,14 @@ export const createTRPCClient = () => {
           } catch (error) {
             console.error('tRPC Fetch error:', error);
             
+            // Handle timeout errors
+            if (error instanceof Error && error.name === 'AbortError') {
+              throw new Error('Request timeout: Backend is taking too long to respond. Please try again.');
+            }
+            
             // If it's a network error, provide a more helpful message
             if (error instanceof TypeError && error.message.includes('fetch')) {
-              throw new Error('Network error: Unable to connect to backend. Please check your internet connection and backend URL.');
+              throw new Error(`Network error: Unable to connect to backend at ${getBaseUrl()}. Please check your internet connection and ensure the backend is running.`);
             }
             
             throw error;

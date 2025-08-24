@@ -248,8 +248,31 @@ export default function ScannerScreen() {
             onPress={async () => {
               try {
                 console.log('Testing backend connection...');
+                
+                // First test basic HTTP connectivity
+                const baseUrl = 'https://awroo30hww4zvdjwpwrgm.rork.com';
+                console.log('Testing base URL:', baseUrl);
+                
+                const healthResponse = await fetch(`${baseUrl}/api/`);
+                console.log('Health check response:', {
+                  status: healthResponse.status,
+                  ok: healthResponse.ok,
+                  statusText: healthResponse.statusText
+                });
+                
+                if (!healthResponse.ok) {
+                  const text = await healthResponse.text();
+                  console.log('Health check response body:', text.substring(0, 200));
+                  Alert.alert('Backend Health Check Failed', `Status: ${healthResponse.status}\nResponse: ${text.substring(0, 100)}...`);
+                  return;
+                }
+                
+                const healthData = await healthResponse.json();
+                console.log('Health check data:', healthData);
+                
+                // Now test tRPC
                 const result = await trpcClient.example.hi.query();
-                Alert.alert('Backend Test', `Success! Response: ${result.hello}`);
+                Alert.alert('Backend Test Success', `Health: ${healthData.status}\ntRPC: ${result.hello}`);
               } catch (error) {
                 console.error('Backend test failed:', error);
                 const errorMessage = error instanceof Error ? error.message : 'Unknown error';
