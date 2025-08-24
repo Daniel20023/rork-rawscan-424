@@ -18,6 +18,7 @@ function RootLayoutNav() {
       <Stack.Screen name="onboarding" options={{ headerShown: false }} />
       <Stack.Screen name="auth" options={{ headerShown: false }} />
       <Stack.Screen name="verify-otp" options={{ headerShown: false }} />
+      <Stack.Screen name="backend-test" options={{ title: "Backend Test" }} />
       <Stack.Screen 
         name="product/[barcode]" 
         options={{ 

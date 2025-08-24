@@ -8,7 +8,7 @@ import {
   SafeAreaView,
 } from "react-native";
 import { router } from "expo-router";
-import { Scan } from "lucide-react-native";
+import { Scan, Settings } from "lucide-react-native";
 import { useAuth } from "@/contexts/AuthContext";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -86,6 +86,11 @@ export default function IndexScreen() {
     router.push("/auth");
   };
 
+  const handleBackendTest = () => {
+    console.log('Backend test pressed');
+    router.push("/backend-test");
+  };
+
   // Show loading initially
   if (isLoading) {
     return (
@@ -117,6 +122,11 @@ export default function IndexScreen() {
           
           <TouchableOpacity style={styles.signInContainer} onPress={handleSignIn}>
             <Text style={styles.signInText}>Already have an account? Sign In</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={styles.debugButton} onPress={handleBackendTest}>
+            <Settings size={16} color="#6B7280" />
+            <Text style={styles.debugButtonText}>Backend Test</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -212,5 +222,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "500" as const,
     textAlign: "center",
+  },
+  debugButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    marginTop: 20,
+    gap: 8,
+  },
+  debugButtonText: {
+    color: "#6B7280",
+    fontSize: 14,
+    fontWeight: "500" as const,
   },
 });
