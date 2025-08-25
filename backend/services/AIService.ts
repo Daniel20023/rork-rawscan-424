@@ -70,6 +70,7 @@ type AIExplanation = {
 const AI_API_BASE = "https://toolkit.rork.com";
 const GOOGLE_CLOUD_VISION_API_KEY = process.env.GOOGLE_CLOUD_VISION_API_KEY;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const AI_MODEL = process.env.AI_MODEL || 'gpt-4o-mini';
 
 function getVerdictFromScore(score: number): 'Green' | 'Yellow' | 'Red' {

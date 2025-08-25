@@ -306,7 +306,7 @@ export default function ScannerScreen() {
           <Text style={styles.headerSubtitle}>
             Point camera at barcode
           </Text>
-          <Text style={styles.brandTitle}>RawScan</Text>
+          <Text style={styles.brandTitle}>InIt AI</Text>
         </View>
 
         <View style={styles.scanArea}>

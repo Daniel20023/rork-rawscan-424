@@ -7,6 +7,7 @@ import { ocrProcedure } from "./routes/ai/ocr/route";
 import { analyzeIngredientsProcedure } from "./routes/ai/analyze-ingredients/route";
 import { recommendationsProcedure } from "./routes/ai/recommendations/route";
 import { nutritionInsightsProcedure } from "./routes/ai/insights/route";
+import { analyzeProductProcedure } from "./routes/ai/analyze-product/route";
 import { getProfileProcedure, updateProfileProcedure } from "./routes/user/profile/route";
 import { getUserPreferencesProcedure, updateUserPreferencesProcedure } from "./routes/user/preferences/route";
 import { getScanHistoryProcedure, addScanProcedure, deleteScanProcedure } from "./routes/user/history/route";
@@ -26,6 +27,7 @@ export const appRouter = createTRPCRouter({
     analyzeIngredients: analyzeIngredientsProcedure,
     recommendations: recommendationsProcedure,
     insights: nutritionInsightsProcedure,
+    analyzeProduct: analyzeProductProcedure,
   }),
   user: createTRPCRouter({
     profile: createTRPCRouter({
