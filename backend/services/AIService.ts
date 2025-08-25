@@ -1,4 +1,5 @@
 import { Product } from "../types/product";
+import { Profile, ItemInput, MatchedFact, ScoreResult } from './ScoringService';
 
 type AIMessage = {
   role: 'system' | 'user' | 'assistant';
@@ -53,8 +54,29 @@ type NutritionInsight = {
   scoreExplanation: string;
 };
 
+type AIExplanation = {
+  verdict: 'Green' | 'Yellow' | 'Red';
+  headline: string;
+  why: string[];
+  swaps: Array<{
+    name: string;
+    why: string;
+    link?: string | null;
+    score_hint?: number;
+  }>;
+  disclaimer: string;
+};
+
 const AI_API_BASE = "https://toolkit.rork.com";
 const GOOGLE_CLOUD_VISION_API_KEY = process.env.GOOGLE_CLOUD_VISION_API_KEY;
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const AI_MODEL = process.env.AI_MODEL || 'gpt-4o-mini';
+
+function getVerdictFromScore(score: number): 'Green' | 'Yellow' | 'Red' {
+  if (score >= 80) return 'Green';
+  if (score >= 60) return 'Yellow';
+  return 'Red';
+}
 
 export class AIService {
   private static async callAI(messages: AIMessage[]): Promise<string> {
@@ -388,6 +410,197 @@ Score: ${score}/100`
       };
     }
   }
+
+  static async generateExplanation(
+    profile: Profile,
+    item: ItemInput,
+    scoreResult: ScoreResult
+  ): Promise<AIExplanation> {
+    console.log('🤖 Generating AI explanation...');
+    
+    if (!OPENAI_API_KEY) {
+      console.warn('⚠️ OpenAI API key not available, returning fallback explanation');
+      return this.createFallbackExplanation(scoreResult);
+    }
+    
+    try {
+      const systemPrompt = this.createSystemPrompt();
+      const userPrompt = this.createUserPrompt(profile, item, scoreResult);
+      
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${OPENAI_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: AI_MODEL,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt }
+          ],
+          temperature: 0.3,
+          max_tokens: 800,
+          response_format: { type: 'json_object' }
+        })
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('OpenAI API error:', response.status, errorText);
+        return this.createFallbackExplanation(scoreResult);
+      }
+      
+      const data = await response.json();
+      const content = data.choices?.[0]?.message?.content;
+      
+      if (!content) {
+        console.error('No content in OpenAI response');
+        return this.createFallbackExplanation(scoreResult);
+      }
+      
+      const explanation = JSON.parse(content) as AIExplanation;
+      
+      // Validate the response structure
+      if (!explanation.verdict || !explanation.headline || !explanation.why || !explanation.swaps) {
+        console.error('Invalid AI response structure');
+        return this.createFallbackExplanation(scoreResult);
+      }
+      
+      console.log('✅ AI explanation generated successfully');
+      return explanation;
+      
+    } catch (error) {
+      console.error('Error generating AI explanation:', error);
+      return this.createFallbackExplanation(scoreResult);
+    }
+  }
+
+  private static createSystemPrompt(): string {
+    return `You are an expert health and wellness advisor analyzing product ingredients and nutrition.
+
+You receive:
+- User goals: body_goal, health_goals[], diet_goals[] (lifestyle_goals are tracked only and DO NOT affect scoring)
+- An item's ingredients/nutrition data
+- Deterministic rules_score and personalized_score from our scoring engine
+- Matched rule hits and applied multipliers
+
+Your task:
+1. Map personalized_score to verdict: ≥80 Green; 60-79 Yellow; else Red
+2. Create a compelling headline (≤80 chars) that captures the essence
+3. Explain in ≤3 short, actionable bullets why this score makes sense
+4. Suggest 2-3 practical swaps aligned with user goals
+
+IMPORTANT:
+- Do NOT fabricate nutrition data - if missing, say "Limited data—using best estimate"
+- Focus on the most impactful factors from the matched rules
+- Swaps should be realistic alternatives, not medical advice
+- Return STRICT JSON matching the schema
+
+Return JSON in this exact format:
+{
+  "verdict": "Green|Yellow|Red",
+  "headline": "string (≤80 chars)",
+  "why": ["bullet 1", "bullet 2", "bullet 3"],
+  "swaps": [{"name": "string", "why": "string", "link": null, "score_hint": 85}],
+  "disclaimer": "Wellness guidance only; not medical advice."
+}`;
+  }
+
+  private static createUserPrompt(
+    profile: Profile,
+    item: ItemInput,
+    scoreResult: ScoreResult
+  ): string {
+    const { rules_score, personalized_score, matchedFacts, appliedMultipliers } = scoreResult;
+    
+    return `ANALYSIS REQUEST:
+
+User Profile:
+- Body Goal: ${profile.body_goal || 'maintain_weight'}
+- Health Goals: ${profile.health_goals?.join(', ') || 'balanced'}
+- Diet Goals: ${profile.diet_goals?.join(', ') || 'balanced'}
+- Lifestyle Goals: ${profile.lifestyle_goals?.join(', ') || 'none'} (tracked only, not used in scoring)
+
+Product:
+- Category: ${item.category}
+- Ingredients: ${item.ingredients}
+- Nutrition: ${item.nutrition ? JSON.stringify(item.nutrition) : 'Not provided'}
+
+Scoring Results:
+- Rules Score: ${rules_score}/100
+- Personalized Score: ${personalized_score}/100
+- Verdict: ${getVerdictFromScore(personalized_score)}
+
+Matched Rules (${matchedFacts.length}):
+${matchedFacts.map(fact => 
+  `- ${fact.target}: ${fact.weight} points (${fact.reason})`
+).join('\n')}
+
+Applied Multipliers:
+${Object.entries(appliedMultipliers).map(([target, multiplier]) => 
+  `- ${target}: ${multiplier}x multiplier`
+).join('\n') || 'None'}
+
+Please provide your analysis as JSON.`;
+  }
+
+  private static createFallbackExplanation(scoreResult: ScoreResult): AIExplanation {
+    const { personalized_score, matchedFacts } = scoreResult;
+    const verdict = getVerdictFromScore(personalized_score);
+    
+    const positiveFactsCount = matchedFacts.filter(f => f.weight > 0).length;
+    const negativeFactsCount = matchedFacts.filter(f => f.weight < 0).length;
+    
+    let headline: string;
+    let why: string[];
+    
+    if (verdict === 'Green') {
+      headline = `Great choice! Score: ${personalized_score}/100`;
+      why = [
+        `Found ${positiveFactsCount} beneficial ingredients`,
+        negativeFactsCount > 0 ? `Only ${negativeFactsCount} minor concerns` : 'No major red flags detected',
+        'Aligns well with your health goals'
+      ];
+    } else if (verdict === 'Yellow') {
+      headline = `Decent option with room for improvement (${personalized_score}/100)`;
+      why = [
+        `Mixed bag: ${positiveFactsCount} positives, ${negativeFactsCount} negatives`,
+        'Some ingredients could be better',
+        'Consider alternatives when possible'
+      ];
+    } else {
+      headline = `Consider alternatives - Score: ${personalized_score}/100`;
+      why = [
+        `Found ${negativeFactsCount} concerning ingredients`,
+        positiveFactsCount > 0 ? `Only ${positiveFactsCount} redeeming qualities` : 'Few beneficial ingredients',
+        'Better options likely available'
+      ];
+    }
+    
+    const swaps = [
+      {
+        name: 'Whole food alternative',
+        why: 'Look for single-ingredient or minimally processed options',
+        link: null,
+        score_hint: Math.min(95, personalized_score + 20)
+      },
+      {
+        name: 'Organic version',
+        why: 'Organic products typically have fewer synthetic additives',
+        link: null,
+        score_hint: Math.min(90, personalized_score + 15)
+      }
+    ];
+    
+    return {
+      verdict,
+      headline,
+      why: why.slice(0, 3),
+      swaps,
+      disclaimer: 'Wellness guidance only; not medical advice.'
+    };
+  }
 }
 
-export type { OCRResult, IngredientAnalysis, ProductRecommendation, NutritionInsight };
+export type { OCRResult, IngredientAnalysis, ProductRecommendation, NutritionInsight, AIExplanation };

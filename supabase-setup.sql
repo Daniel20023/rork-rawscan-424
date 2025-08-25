@@ -163,7 +163,60 @@ DROP POLICY IF EXISTS "Users can delete own favorites" ON public.user_favorites;
 CREATE POLICY "Users can delete own favorites" ON public.user_favorites
   FOR DELETE USING (auth.uid() = user_id);
 
--- Enhanced user preferences table
+-- Profiles with goals (updated schema)
+CREATE TABLE IF NOT EXISTS public.profiles_goals (
+  user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  body_goal TEXT CHECK (body_goal IN ('lose_weight','gain_weight','maintain_weight')),
+  health_goals TEXT[] CHECK (
+    array_length(health_goals,1) IS NULL OR
+    (health_goals <@ ARRAY['low_sugar','high_protein','low_fat','keto','balanced'])
+  ),
+  diet_goals TEXT[] CHECK (
+    array_length(diet_goals,1) IS NULL OR
+    (diet_goals <@ ARRAY['whole_foods','vegan','carnivore','gluten_free','vegetarian','balanced'])
+  ),
+  lifestyle_goals TEXT[] NULL, -- tracked only; NOT used in scoring
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Items to score
+CREATE TABLE IF NOT EXISTS public.items (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  barcode TEXT,
+  name TEXT NOT NULL,
+  brand TEXT,
+  category TEXT NOT NULL CHECK (category IN ('food','skincare','supplement')),
+  ingredients TEXT NOT NULL,
+  nutrition JSONB, -- optional: { calories, sugar_g, added_sugar_g, sodium_mg, fiber_g, protein_g, sat_fat_g, net_carbs_g }
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Catalog of rules
+CREATE TABLE IF NOT EXISTS public.rules_catalog (
+  id SERIAL PRIMARY KEY,
+  type TEXT NOT NULL CHECK (type IN ('penalty','bonus')),
+  target TEXT NOT NULL, -- e.g., 'added_sugar', 'seed_oils', 'fragrance'
+  pattern TEXT NOT NULL, -- regex/keyword
+  weight INT NOT NULL,   -- negative for penalty, positive for bonus
+  category TEXT NOT NULL CHECK (category IN ('food','skincare','supplement')),
+  notes TEXT
+);
+
+-- Scores
+CREATE TABLE IF NOT EXISTS public.scores (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  item_id UUID REFERENCES public.items(id) ON DELETE CASCADE,
+  rules_score INT NOT NULL,
+  personalized_score INT NOT NULL,
+  explanation JSONB NOT NULL, -- from LLM (verdict/headline/why/swaps)
+  swaps JSONB,
+  details JSONB, -- matchedFacts, multipliers applied, etc.
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Enhanced user preferences table (keeping existing for compatibility)
 CREATE TABLE IF NOT EXISTS public.user_preferences (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL UNIQUE,
@@ -390,3 +443,59 @@ CREATE TRIGGER on_auth_user_created_preferences
   AFTER INSERT OR UPDATE ON auth.users
   FOR EACH ROW
   EXECUTE FUNCTION public.handle_new_user_preferences();
+
+-- Enable RLS on new tables
+ALTER TABLE public.profiles_goals ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.rules_catalog ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.scores ENABLE ROW LEVEL SECURITY;
+
+-- Create policies for profiles_goals
+DROP POLICY IF EXISTS "Users can view own profile goals" ON public.profiles_goals;
+CREATE POLICY "Users can view own profile goals" ON public.profiles_goals
+  FOR SELECT USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can update own profile goals" ON public.profiles_goals;
+CREATE POLICY "Users can update own profile goals" ON public.profiles_goals
+  FOR UPDATE USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can insert own profile goals" ON public.profiles_goals;
+CREATE POLICY "Users can insert own profile goals" ON public.profiles_goals
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+-- Create policies for items (public read, authenticated write)
+DROP POLICY IF EXISTS "Anyone can view items" ON public.items;
+CREATE POLICY "Anyone can view items" ON public.items
+  FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Authenticated users can insert items" ON public.items;
+CREATE POLICY "Authenticated users can insert items" ON public.items
+  FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+
+-- Create policies for rules_catalog (public read)
+DROP POLICY IF EXISTS "Anyone can view rules" ON public.rules_catalog;
+CREATE POLICY "Anyone can view rules" ON public.rules_catalog
+  FOR SELECT USING (true);
+
+-- Create policies for scores
+DROP POLICY IF EXISTS "Users can view own scores" ON public.scores;
+CREATE POLICY "Users can view own scores" ON public.scores
+  FOR SELECT USING (auth.uid() = user_id OR user_id IS NULL);
+
+DROP POLICY IF EXISTS "Authenticated users can insert scores" ON public.scores;
+CREATE POLICY "Authenticated users can insert scores" ON public.scores
+  FOR INSERT WITH CHECK (auth.uid() = user_id OR user_id IS NULL);
+
+-- Create indexes for performance
+CREATE INDEX IF NOT EXISTS idx_items_barcode ON public.items(barcode);
+CREATE INDEX IF NOT EXISTS idx_items_category ON public.items(category);
+CREATE INDEX IF NOT EXISTS idx_scores_user_id ON public.scores(user_id);
+CREATE INDEX IF NOT EXISTS idx_scores_item_id ON public.scores(item_id);
+CREATE INDEX IF NOT EXISTS idx_rules_catalog_category ON public.rules_catalog(category);
+
+-- Create triggers for updated_at
+DROP TRIGGER IF EXISTS handle_profiles_goals_updated_at ON public.profiles_goals;
+CREATE TRIGGER handle_profiles_goals_updated_at
+  BEFORE UPDATE ON public.profiles_goals
+  FOR EACH ROW
+  EXECUTE FUNCTION public.handle_updated_at();
