@@ -156,22 +156,21 @@ export const [UserPreferencesProvider, useUserPreferences] = createContextHook((
             .single();
             
           if (supabasePrefs) {
-            // Convert legacy data to new format
-            const legacyData = supabasePrefs.health_goals || {};
+            // Convert Supabase data to UserPreferences format
             const convertedPrefs: UserPreferences = {
-              name: legacyData.name || '',
-              gender: legacyData.gender || '',
-              body_goal: convertLegacyBodyGoal(legacyData.bodyGoals?.[0] || 'maintain_weight'),
-              health_goals: convertLegacyHealthGoals(legacyData.healthGoals || []),
-              diet_type: convertLegacyDietType(supabasePrefs.dietary_restrictions?.[0] || 'balanced'),
-              avoid_ingredients: [],
-              strictness: {
+              name: supabasePrefs.display_name || '',
+              gender: supabasePrefs.gender || '',
+              body_goal: supabasePrefs.body_goal || 'maintain_weight',
+              health_goals: Array.isArray(supabasePrefs.health_goals) ? supabasePrefs.health_goals : [],
+              diet_type: supabasePrefs.diet_type || 'balanced',
+              avoid_ingredients: Array.isArray(supabasePrefs.avoid_ingredients) ? supabasePrefs.avoid_ingredients : [],
+              strictness: supabasePrefs.strictness || {
                 diet_type: 0.8,
                 health_goals: 0.7
               },
-              accomplish_future: convertLegacyAccomplishmentGoals(legacyData.accomplishmentGoals || []),
-              hasCompletedOnboarding: true,
-              profilePicture: legacyData.profilePicture || undefined,
+              accomplish_future: Array.isArray(supabasePrefs.accomplish_future) ? supabasePrefs.accomplish_future : [],
+              hasCompletedOnboarding: supabasePrefs.onboarding_completed || false,
+              profilePicture: undefined, // Not stored in user_preferences table
             };
             
             console.log('✅ Loaded user goals from Supabase:', {
@@ -190,7 +189,7 @@ export const [UserPreferencesProvider, useUserPreferences] = createContextHook((
           }
         }
       } catch (supabaseError) {
-        console.log('Could not load from Supabase, falling back to local storage:', supabaseError);
+        console.log('Could not load from Supabase, falling back to local storage:', supabaseError instanceof Error ? supabaseError.message : String(supabaseError));
       }
       
       // Fallback to local storage
@@ -211,7 +210,7 @@ export const [UserPreferencesProvider, useUserPreferences] = createContextHook((
         console.log('No stored preferences found - user needs to complete onboarding');
       }
     } catch (error) {
-      console.error("Error loading preferences:", error);
+      console.error("Error loading preferences:", error instanceof Error ? error.message : String(error));
     } finally {
       setIsLoading(false);
       console.log('Preferences loading complete');
@@ -242,18 +241,16 @@ export const [UserPreferencesProvider, useUserPreferences] = createContextHook((
 
           const preferencesData = {
             user_id: user.id,
-            dietary_restrictions: [newPreferences.diet_type],
-            health_goals: {
-              body_goal: newPreferences.body_goal,
-              health_goals: newPreferences.health_goals,
-              accomplish_future: newPreferences.accomplish_future,
-              gender: newPreferences.gender || null,
-              name: newPreferences.name || null,
-              profilePicture: newPreferences.profilePicture || null,
-              strictness: newPreferences.strictness,
-              avoid_ingredients: newPreferences.avoid_ingredients || []
-            },
-            notifications_enabled: true
+            body_goal: newPreferences.body_goal,
+            health_goals: newPreferences.health_goals,
+            diet_type: newPreferences.diet_type,
+            avoid_ingredients: newPreferences.avoid_ingredients || [],
+            strictness: newPreferences.strictness,
+            accomplish_future: newPreferences.accomplish_future,
+            display_name: newPreferences.name || null,
+            gender: newPreferences.gender || null,
+            notifications_enabled: true,
+            onboarding_completed: newPreferences.hasCompletedOnboarding
           };
 
           if (existingPrefs) {
@@ -272,10 +269,10 @@ export const [UserPreferencesProvider, useUserPreferences] = createContextHook((
           console.log('Preferences synced to Supabase successfully');
         }
       } catch (supabaseError) {
-        console.log('Could not sync to Supabase (user may not be authenticated):', supabaseError);
+        console.error('Error syncing user preferences:', supabaseError instanceof Error ? supabaseError.message : String(supabaseError));
       }
     } catch (error) {
-      console.error("Error saving preferences:", error);
+      console.error("Error saving preferences:", error instanceof Error ? error.message : String(error));
     }
   }, []);
 
@@ -333,7 +330,7 @@ export const [UserPreferencesProvider, useUserPreferences] = createContextHook((
         profilePicture: undefined,
       });
     } catch (error) {
-      console.error("Error resetting preferences:", error);
+      console.error("Error resetting preferences:", error instanceof Error ? error.message : String(error));
     }
   }, []);
 

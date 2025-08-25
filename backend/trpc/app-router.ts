@@ -9,6 +9,7 @@ import { recommendationsProcedure } from "./routes/ai/recommendations/route";
 import { nutritionInsightsProcedure } from "./routes/ai/insights/route";
 import { analyzeProductProcedure } from "./routes/ai/analyze-product/route";
 import { getProfileProcedure, updateProfileProcedure } from "./routes/user/profile/route";
+import { profileUpsertProcedure } from "./routes/profile/upsert/route";
 import { getUserPreferencesProcedure, updateUserPreferencesProcedure } from "./routes/user/preferences/route";
 import { getScanHistoryProcedure, addScanProcedure, deleteScanProcedure } from "./routes/user/history/route";
 import { getFavoritesProcedure, addFavoriteProcedure, removeFavoriteProcedure, toggleFavoriteProcedure } from "./routes/user/favorites/route";
@@ -33,6 +34,7 @@ export const appRouter = createTRPCRouter({
     profile: createTRPCRouter({
       get: getProfileProcedure,
       update: updateProfileProcedure,
+      upsert: profileUpsertProcedure,
     }),
     preferences: createTRPCRouter({
       get: getUserPreferencesProcedure,
