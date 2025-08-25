@@ -1,6 +1,6 @@
-# 🥗 RawScan - Food Nutrition Scanner
+# 🥗 InIt AI - Nutrition & Ingredient Analysis App
 
-A comprehensive food nutrition scanning app built with React Native and Expo. Scan barcodes, analyze nutrition labels with OCR, and get personalized health insights.
+A React Native app built with Expo that helps users analyze food and skincare products using AI-powered ingredient scoring and personalized recommendations.
 
 ## 🚀 Quick Start
 
@@ -36,18 +36,26 @@ The following APIs are already set up and working:
 - ✅ **Supabase**: Configured and ready
 - ✅ **OpenFoodFacts**: No API key needed (free)
 
-### 4. Start the Development Server
+### 4. Start the Backend Server
+```bash
+bun run backend/server.ts
+```
+
+The backend will start on `http://localhost:3000`
+
+### 5. Start the Development Server
 ```bash
 bun start
 ```
 
 This command will:
 - Start the Expo development server
-- Start the backend API server
 - Show QR code for mobile testing
 - Open web preview (React Native Web compatible)
 
-### 5. Open on Your Device
+**Note**: Make sure the backend server is running first, or you'll get connection errors.
+
+### 6. Open on Your Device
 - **Mobile**: Scan QR code with Expo Go app
 - **Web**: Opens automatically in browser
 - **iOS Simulator**: Press `i` in terminal
@@ -204,7 +212,12 @@ EXPO_PUBLIC_SITE_URL=exp://192.168.1.100:8081
 ## 🚀 Deployment
 
 ### Backend Deployment
-The backend is automatically deployed on the Rork platform when you run `bun start`.
+For development, run the backend locally:
+```bash
+bun run backend/server.ts
+```
+
+For production, deploy the backend to your preferred hosting service (Vercel, Railway, etc.).
 
 ### Mobile App Deployment
 For production deployment:
@@ -230,13 +243,13 @@ Use these barcodes to test the local product database:
 ### API Testing
 ```bash
 # Test backend health
-curl https://your-project.rork.com/api/
+curl http://localhost:3000/api/
 
 # Test product lookup
-curl https://your-project.rork.com/api/product/049000028391
+curl http://localhost:3000/api/product/049000028391
 
 # Test OpenFoodFacts connectivity
-curl https://your-project.rork.com/api/test-off/3017620422003
+curl http://localhost:3000/api/test-off/3017620422003
 ```
 
 ## 🔧 Troubleshooting
@@ -253,10 +266,11 @@ curl https://your-project.rork.com/api/test-off/3017620422003
    - Try restarting the Expo development server with `bun start`
    - Clear Expo Go app cache
 
-3. **Backend 404 Errors**
-   - Ensure `bun start` is running
-   - Check `EXPO_PUBLIC_RORK_API_BASE_URL` in `.env`
-   - Verify backend is deployed and accessible
+3. **Backend Connection Errors**
+   - Ensure backend server is running: `bun run backend/server.ts`
+   - Check `EXPO_PUBLIC_RORK_API_BASE_URL` in `.env` (should be `http://localhost:3000`)
+   - Verify backend is accessible at the configured URL
+   - Use the "Backend Test" page in the app to diagnose issues
 
 4. **Camera Not Working**
    - Grant camera permissions

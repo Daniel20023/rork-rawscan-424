@@ -10,12 +10,8 @@ const getBaseUrl = () => {
   const baseUrl = process.env.EXPO_PUBLIC_RORK_API_BASE_URL;
   
   if (!baseUrl) {
-    console.warn('EXPO_PUBLIC_RORK_API_BASE_URL not found, using fallback');
-    // For development, try to use the tunnel URL from Expo
-    const expoUrl = process.env.EXPO_PUBLIC_URL;
-    if (expoUrl) {
-      return expoUrl;
-    }
+    console.warn('EXPO_PUBLIC_RORK_API_BASE_URL not found, using localhost fallback');
+    console.warn('Make sure to start the backend server with: bun run backend/server.ts');
     return 'http://localhost:3000'; // Local fallback
   }
   
@@ -29,7 +25,7 @@ const testBackendHealth = async (url: string): Promise<{ ok: boolean; error?: st
     console.log('🔍 Testing backend health at:', url);
     
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
     
     const response = await fetch(`${url}/api/`, {
       method: 'GET',
@@ -121,7 +117,7 @@ export const createTRPCClient = () => {
           
           try {
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
             
             const response = await fetch(url, {
               ...options,

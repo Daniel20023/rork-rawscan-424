@@ -19,6 +19,7 @@
     "@trpc/client": "^11.5.0",
     "@trpc/react-query": "^11.5.0",
     "@trpc/server": "^11.5.0",
+    "@types/bun": "^1.2.20",
     "expo": "^53.0.4",
     "expo-blur": "~14.1.4",
     "expo-camera": "~16.1.11",

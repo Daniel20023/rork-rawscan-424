@@ -29,7 +29,7 @@ export default function BackendTestPage() {
     // Reset all tests
     setTests(prev => prev.map(test => ({ ...test, status: 'pending' as const, message: undefined, duration: undefined })));
 
-    const baseUrl = process.env.EXPO_PUBLIC_RORK_API_BASE_URL || 'https://awroo30hww4zvdjwpwrgm.rork.com';
+    const baseUrl = process.env.EXPO_PUBLIC_RORK_API_BASE_URL || 'http://localhost:3000';
     
     // Test 1: Backend Health Check
     try {
@@ -136,10 +136,10 @@ export default function BackendTestPage() {
   };
 
   const showDetails = () => {
-    const baseUrl = process.env.EXPO_PUBLIC_RORK_API_BASE_URL || 'https://awroo30hww4zvdjwpwrgm.rork.com';
+    const baseUrl = process.env.EXPO_PUBLIC_RORK_API_BASE_URL || 'http://localhost:3000';
     Alert.alert(
       'Backend Configuration',
-      `Backend URL: ${baseUrl}\n\nThis page tests the connection to your backend server. If tests are failing, the backend may not be deployed or accessible.`,
+      `Backend URL: ${baseUrl}\n\nThis page tests the connection to your backend server. If tests are failing, make sure to run the backend server with:\n\nbun run backend/server.ts`,
       [{ text: 'OK' }]
     );
   };
@@ -150,7 +150,7 @@ export default function BackendTestPage() {
         <View style={styles.header}>
           <Text style={styles.title}>Backend Connection Test</Text>
           <Text style={styles.subtitle}>
-            Testing connection to: {process.env.EXPO_PUBLIC_RORK_API_BASE_URL || 'https://awroo30hww4zvdjwpwrgm.rork.com'}
+            Testing connection to: {process.env.EXPO_PUBLIC_RORK_API_BASE_URL || 'http://localhost:3000'}
           </Text>
         </View>
 

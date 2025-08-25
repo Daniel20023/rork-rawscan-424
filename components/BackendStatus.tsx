@@ -22,7 +22,7 @@ export function BackendStatus({ showDetails = false }: BackendStatusProps) {
       console.log('🔍 Checking backend status...');
       
       // Test basic connectivity first
-      const baseUrl = process.env.EXPO_PUBLIC_RORK_API_BASE_URL || 'https://awroo30hww4zvdjwpwrgm.rork.com';
+      const baseUrl = process.env.EXPO_PUBLIC_RORK_API_BASE_URL || 'http://localhost:3000';
       
       const healthResponse = await fetch(`${baseUrl}/api/`, {
         method: 'GET',
