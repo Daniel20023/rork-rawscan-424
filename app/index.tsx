@@ -107,6 +107,7 @@ export default function IndexScreen() {
       <View style={styles.gradient}>
         {/* Hero section */}
         <View style={styles.heroContainer}>
+          <Text style={styles.appName}>InIt AI</Text>
           <View style={styles.heroIcon}>
             <Scan size={80} color="#FF0040" />
           </View>
@@ -159,6 +160,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingTop: 80,
     paddingBottom: 40,
+  },
+  appName: {
+    fontSize: 48,
+    fontWeight: "900" as const,
+    color: "#FF0040",
+    textAlign: "center",
+    marginBottom: 30,
+    letterSpacing: 2,
   },
   heroIcon: {
     width: 160,
