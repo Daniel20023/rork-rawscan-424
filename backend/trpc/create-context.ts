@@ -1,7 +1,7 @@
 import { FetchCreateContextFnOptions } from "@trpc/server/adapters/fetch";
 import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
-import { supabase } from "../../lib/supabase";
+import { supabase } from "../lib/supabase";
 
 // Context creation function
 export const createContext = async (opts: FetchCreateContextFnOptions) => {

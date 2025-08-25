@@ -1,11 +1,6 @@
 import { z } from 'zod';
 import { publicProcedure } from '../../../create-context';
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+import { supabase } from '../../../lib/supabase';
 
 const profileSchema = z.object({
   body_goal: z.enum(['lose_weight', 'gain_weight', 'maintain_weight']).optional(),
