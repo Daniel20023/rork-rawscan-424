@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { publicProcedure } from '../../../create-context';
-import { supabase } from '../../../lib/supabase';
+import { supabase } from '../../../../lib/supabase';
 
 const profileSchema = z.object({
   body_goal: z.enum(['lose_weight', 'gain_weight', 'maintain_weight']).optional(),
