@@ -15,6 +15,16 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 export default function IndexScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const { user, session, loading: authLoading } = useAuth();
+  
+  // Fallback timeout to prevent infinite loading
+  useEffect(() => {
+    const fallbackTimer = setTimeout(() => {
+      console.log('Fallback timeout reached, showing welcome screen');
+      setIsLoading(false);
+    }, 8000); // 8 second maximum loading time
+    
+    return () => clearTimeout(fallbackTimer);
+  }, []);
 
   useEffect(() => {
     const checkAuthAndRedirect = async () => {
@@ -23,7 +33,7 @@ export default function IndexScreen() {
       console.log('User:', user?.email);
       console.log('Session:', !!session);
       
-      // Wait for auth to finish loading
+      // Wait for auth to finish loading with timeout
       if (authLoading) {
         console.log('Auth still loading, waiting...');
         return;
@@ -64,17 +74,25 @@ export default function IndexScreen() {
         }
       }
       
-      // If not authenticated, show welcome screen after a brief delay
+      // If not authenticated, show welcome screen immediately
       console.log('User not authenticated, showing welcome screen...');
-      const timer = setTimeout(() => {
-        setIsLoading(false);
-      }, 1000);
-      
-      return () => clearTimeout(timer);
+      setIsLoading(false);
     };
     
     checkAuthAndRedirect();
   }, [user, session, authLoading]);
+  
+  // Additional timeout for auth loading
+  useEffect(() => {
+    if (!authLoading && isLoading) {
+      const timer = setTimeout(() => {
+        console.log('Auth finished loading, showing welcome screen');
+        setIsLoading(false);
+      }, 500);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [authLoading, isLoading]);
 
   const handleGetStarted = () => {
     console.log('Get started pressed');

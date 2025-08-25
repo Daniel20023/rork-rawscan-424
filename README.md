@@ -36,26 +36,36 @@ The following APIs are already set up and working:
 - ✅ **Supabase**: Configured and ready
 - ✅ **OpenFoodFacts**: No API key needed (free)
 
-### 4. Start the Backend Server
+### 4. Start Development (Easy Way)
+
+**Linux/Mac:**
 ```bash
-bun run backend/server.ts
+chmod +x dev.sh
+./dev.sh
 ```
 
-The backend will start on `http://localhost:3000`
+**Windows:**
+```cmd
+dev.bat
+```
 
-### 5. Start the Development Server
+**Manual Start:**
 ```bash
+# Terminal 1: Backend
+bun run backend/server.ts
+
+# Terminal 2: Frontend  
 bun start
 ```
 
-This command will:
-- Start the Expo development server
+The development scripts will:
+- Start backend server on `http://localhost:3000`
+- Start Expo development server
 - Show QR code for mobile testing
-- Open web preview (React Native Web compatible)
+- Open web preview automatically
+- Handle cleanup when you stop the servers
 
-**Note**: Make sure the backend server is running first, or you'll get connection errors.
-
-### 6. Open on Your Device
+### 5. Open on Your Device
 - **Mobile**: Scan QR code with Expo Go app
 - **Web**: Opens automatically in browser
 - **iOS Simulator**: Press `i` in terminal
@@ -254,6 +264,16 @@ curl http://localhost:3000/api/test-off/3017620422003
 
 ## 🔧 Troubleshooting
 
+### App Appears "Idle" or Stuck on Loading Screen
+
+If your app is stuck on the loading screen and appears idle:
+
+**Quick Fix:**
+1. **Wait 8 seconds** - The app has a built-in timeout to prevent infinite loading
+2. **Check Backend** - Ensure backend server is running: `bun run backend/server.ts`
+3. **Use Backend Test** - Tap the "Backend Test" button on the welcome screen
+4. **Restart App** - Shake device → Reload, or restart Expo server
+
 ### Common Issues
 
 1. **"Database error saving new user" / Auth Errors**
@@ -271,6 +291,12 @@ curl http://localhost:3000/api/test-off/3017620422003
    - Check `EXPO_PUBLIC_RORK_API_BASE_URL` in `.env` (should be `http://localhost:3000`)
    - Verify backend is accessible at the configured URL
    - Use the "Backend Test" page in the app to diagnose issues
+
+4. **Authentication Timeout Issues**
+   - Check Supabase URL and keys in `.env`
+   - Verify internet connection
+   - Try clearing app data and restarting
+   - The app will automatically timeout after 8 seconds and show the welcome screen
 
 4. **Camera Not Working**
    - Grant camera permissions

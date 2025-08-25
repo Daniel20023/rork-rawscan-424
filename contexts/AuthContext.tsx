@@ -61,7 +61,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // Add timeout to session request
           const sessionPromise = supabase.auth.getSession();
           const timeoutPromise = new Promise<never>((_, reject) => 
-            setTimeout(() => reject(new Error('Auth initialization timeout')), 8000)
+            setTimeout(() => reject(new Error('Auth initialization timeout')), 5000)
           );
           
           const { data: { session: fetchedSession }, error } = await Promise.race([
@@ -84,8 +84,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           
           if (retryCount < maxRetries - 1) {
             retryCount++;
-            console.log(`Retrying auth initialization in 2 seconds... (${retryCount}/${maxRetries})`);
-            setTimeout(() => initializeAuth(), 2000);
+            console.log(`Retrying auth initialization in 1 second... (${retryCount}/${maxRetries})`);
+            setTimeout(() => initializeAuth(), 1000);
             return; // Don't set loading to false yet
           } else {
             console.error('Max auth retry attempts reached, continuing without session');
@@ -185,11 +185,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     };
     
-    // Initialize auth and setup listener with delay
+    // Initialize auth and setup listener immediately
     const timer = setTimeout(() => {
       initializeAuth();
       setupAuthListener();
-    }, 500); // Increased delay to allow app to fully initialize
+    }, 100); // Reduced delay for faster startup
     
     return () => {
       clearTimeout(timer);
